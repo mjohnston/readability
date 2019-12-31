@@ -1180,6 +1180,31 @@ Readability.prototype = {
         }
       }
 
+      // Extract the leading image
+      if (articleContent && parentOfTopCandidate) {
+        var leadingImage;
+        this._forEachNode(this._getAllNodesWithTag(parentOfTopCandidate, ["img", "picture", "figure"]), function (elem) {
+          // Not if we've already found one
+          var isLeadingImage = typeof leadingImage == 'undefined';
+
+          // Not if it's contained in the article content
+          if (isLeadingImage) {
+            isLeadingImage = !topCandidate.contains(elem);
+          }
+
+          // Found it
+          if (isLeadingImage) {
+            leadingImage = elem;
+          }
+        });
+
+        // Stash it in the readability object to preserve API compat
+        if (leadingImage) {
+          articleContent.readability = articleContent.readability || {};
+          articleContent.readability.leadingImage = leadingImage;
+        }
+      }
+
       if (parseSuccessful) {
         // Find out text direction from ancestors of final top candidate.
         var ancestors = [parentOfTopCandidate, topCandidate].concat(this._getNodeAncestors(parentOfTopCandidate));
@@ -1838,6 +1863,12 @@ Readability.prototype = {
       }
     }
 
+    // Leading image is stashed in the article content
+    var leadingImage;
+    if (articleContent.readability && articleContent.readability.leadingImage) {
+      leadingImage = articleContent.readability.leadingImage.outerHTML;
+    }
+
     var textContent = articleContent.textContent;
     return {
       title: this._articleTitle,
@@ -1847,7 +1878,8 @@ Readability.prototype = {
       textContent: textContent,
       length: textContent.length,
       excerpt: metadata.excerpt,
-      siteName: metadata.siteName || this._articleSiteName
+      siteName: metadata.siteName || this._articleSiteName,
+      leadingImage: leadingImage
     };
   }
 };
